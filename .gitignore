@@ -1,0 +1,48 @@
+# Dataset and raw data — kept local only
+data/
+dataset/
+
+# Old training runs — only keep the final one
+runs/train/coc_capital_v12/
+runs/train/coc_capital_v2/
+runs/train/coc_capital_v22/
+runs/train/coc_capital_v4_small/
+runs/train/coc_capital_v4_small2/
+runs/train/coc_capital_v5_small/
+runs/train/coc_capital_v5_small2/
+runs/train/coc_capital_v5_small22/
+runs/train/coc_capital_v6_medium/
+runs/train/coc_capital_v6_medium2/
+runs/train/coc_capital_v6_medium22/
+runs/train/coc_capital_v7_yolo11m/
+runs/train/coc_capital_v7_yolo11m2/
+runs/train/coc_capital_v7_yolo11m22/
+runs/train/coc_capital_v8_yolo11m/
+runs/train/coc_capital_v8_yolo11m2/
+runs/train/coc_capital_v9_final2/
+
+# YOLO output folders (generated on run)
+runs/detect/
+runs/compare/
+runs/visualize/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+
+# Dev logs
+PROGRESS.md
+PLAN.md
+
+# Downloaded base weights (auto-downloaded by Ultralytics)
+*.pt
+!runs/train/coc_capital_v9_final/weights/best.pt
+
+# Misc
+scripts/requirements_download.txt
+
+# OS
+.DS_Store
+Thumbs.db
