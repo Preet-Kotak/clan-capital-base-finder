@@ -14,61 +14,20 @@ import sys
 import cv2
 import argparse
 import numpy as np
-import os
 from pathlib import Path
 from dotenv import load_dotenv
-from ultralytics import YOLO
 
 load_dotenv()
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from src.extractor import Extractor, DISTRICT_MAP, ANCHOR_CLASSES
+from src.extractor import Extractor, DISTRICT_MAP
 from src.matcher import match_layouts
 
 OUTPUT_DIR   = Path("runs/compare")
-WEIGHTS      = os.getenv("WEIGHTS", "runs/train/coc_capital_v9_final/weights/best.pt")
 GRAY_FACTOR  = 0.50
 DOT_RADIUS   = 10
 DOT_COLOR    = (0, 0, 255)
 DOT_OUTLINE  = (255, 255, 255)
-
-
-def get_pixel_boxes(img_path: Path, conf: float = 0.25) -> list[dict]:
-    """
-    Run YOLO and return pixel bounding boxes with normalized center coords.
-    Used to map normalized layout coords back to pixel positions.
-    """
-    model   = YOLO(WEIGHTS)
-    preds   = model.predict(source=str(img_path), conf=conf, iou=0.5, verbose=False)
-    result  = preds[0]
-    names   = result.names
-    boxes   = result.boxes
-
-    # find anchor
-    anchor_x, anchor_y = 0.5, 0.5
-    for box in boxes:
-        if names[int(box.cls[0])] in ANCHOR_CLASSES:
-            anchor_x = float(box.xywhn[0][0])
-            anchor_y = float(box.xywhn[0][1])
-            break
-
-    detections = []
-    for box in boxes:
-        x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
-        cls_name = names[int(box.cls[0])]
-        x_center = float(box.xywhn[0][0])
-        y_center = float(box.xywhn[0][1])
-
-        detections.append({
-            "type":  cls_name,
-            "x":     round(x_center - anchor_x, 4),
-            "y":     round(y_center - anchor_y, 4),
-            "x1":    x1, "y1": y1,
-            "x2":    x2, "y2": y2,
-            "cx":    (x1 + x2) // 2,
-            "cy":    (y1 + y2) // 2,
-        })
-    return detections
 
 
 def find_unmatched_pixels(
@@ -154,7 +113,7 @@ def main():
     parser.add_argument("--image1",   required=True)
     parser.add_argument("--image2",   required=True)
     parser.add_argument("--district", required=False, type=int, default=None,
-                        help="District 0-8 (optional, enables calibration)")
+                        help="District 0-8 (optional, checks the expected count)")
     parser.add_argument("--fuzzy",    action="store_true",
                         help="Cannon/spear count as same type")
     args = parser.parse_args()
@@ -190,8 +149,8 @@ def main():
 
     # get pixel boxes for visualization
     print(f"\nGetting pixel positions for visualization...")
-    px1 = get_pixel_boxes(Path(args.image1), conf=r1["conf_used"])
-    px2 = get_pixel_boxes(Path(args.image2), conf=r2["conf_used"])
+    px1 = r1["pixel_boxes"]
+    px2 = r2["pixel_boxes"]
 
     # find exact unmatched pixel boxes
     unmatched_px1 = find_unmatched_pixels(px1, result["unmatched_a"])

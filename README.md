@@ -21,7 +21,7 @@ Give it a screenshot of any Clan Capital district, and it detects every defence 
 
 1. **Detects** all defence buildings in a screenshot using YOLO11m (23 classes)
 2. **Normalizes** positions relative to the District Hall anchor so layouts are scale and position invariant
-3. **Auto-calibrates** confidence per district — reruns inference up to 3× until the expected building count is matched exactly
+3. **Cleans detections** — merges overlapping tiles, removes conflicting overlapping boxes, and keeps only the highest-confidence hall
 4. **Matches** layouts using the Hungarian algorithm (optimal 1-to-1 assignment by Euclidean distance)
 5. **Finds** the top N most similar bases from a database of 750 extracted layouts
 6. **Visualizes** differences between two bases — matched buildings gray out, unmatched ones get highlighted with a red dot and label
@@ -123,7 +123,7 @@ Ran all 150 epochs without hitting the patience cutoff, which meant it kept impr
 ## Setup
 
 ```bash
-pip install ultralytics scipy numpy supabase opencv-python
+pip install ultralytics scipy numpy supabase opencv-python sahi==0.12.7
 ```
 
 Requires PyTorch with CUDA. Install with:
@@ -189,18 +189,16 @@ Minimum match threshold to surface a result: **80%**
 
 ---
 
-## Confidence Calibration
+## Inference
 
-Each district has a known exact defence count (e.g. Balloon Lagoon is always 54 or 56). The extractor auto-adjusts:
+The extractor uses two overlapping full-height SAHI tiles with 448-pixel inference,
+20% overlap and fixed confidence 0.25. Same-class tile predictions merge with GREEDYNMM
+at IOS 0.5; class-agnostic NMS at IoU 0.8 removes conflicting overlapping detections.
+Only the highest-confidence detection across `district_hall` and `capital_peak` is kept
+and used as the coordinate anchor. Missing halls still use the image center.
 
-```
-Run 1: conf = 0.25
-  too few  → lower conf by 0.05 → Run 2
-  too many → raise conf by 0.05 → Run 2
-  exact    → done
-
-Run 2 → same logic → Run 3
-Run 3 → keep closest result regardless
-```
-
-Two valid counts exist per district because some buildings can be hidden underground — all hidden gives the lower count, all visible gives the higher. Partial is never valid.
+`runs=1` represents one extraction containing two tile forward passes, with no additional
+full-image pass. District counts are diagnostics: `calibrated` reports whether the cleaned
+count matches an expected count; a mismatch does not lower confidence or rerun inference.
+The JSON building format is unchanged. Compare uses pixel boxes from the same predictions
+as matching, without running a separate detector for visualization.
