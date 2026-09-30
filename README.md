@@ -123,13 +123,19 @@ Ran all 150 epochs without hitting the patience cutoff, which meant it kept impr
 ## Setup
 
 ```bash
-pip install ultralytics scipy numpy supabase opencv-python
+pip install ultralytics scipy numpy supabase opencv-python python-dotenv
 ```
 
 Requires PyTorch with CUDA. Install with:
 ```powershell
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 ```
+
+Weights are included at:
+```
+runs/train/coc_capital_v9_final/weights/best.pt
+```
+This path is the default — no config needed. To use a different weights file, set `WEIGHTS` in your `.env`.
 
 ---
 
