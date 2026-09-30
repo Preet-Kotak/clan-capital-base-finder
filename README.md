@@ -185,10 +185,24 @@ Outputs two annotated images to `runs/compare/` — matched buildings are grayed
 
 **Fuzzy mode** — cannon and spear are grouped together (useful when the model occasionally confuses the two similar-looking towers).
 
-The matcher groups buildings by type, runs the Hungarian algorithm on each group, and counts a pair as matched only if their normalized distance is ≤ `0.05` (~2 tiles).
+The matcher excludes `district_hall` and `capital_peak` from alignment and scoring.
+It fits translation and positive x/y scale from same-type building pairs, then uses
+Hungarian assignment within each type to find one-to-one correspondences. Separate
+x/y scales account for coordinates normalized by image width and height. Each scale
+is limited to 0.5–2; rotations, reflections and shear are not fitted.
+
+Distances are measured relative to typical nearest-building spacing, with a matching
+tolerance of 0.35 of that spacing. A supported alignment needs at least 20 defenses
+across four types, spread over both dimensions. Ambiguous or insufficient arrangements
+return zero matches. Proposal generation is bounded to eight class pairs and 32 edges
+per pair, with 32 candidate alignments verified and up to two refinements each.
+
+Existing `{type, x, y, conf}` layouts remain usable, including hall-relative coordinates
+and layouts extracted without a detected hall. Matching returns the original building
+records so Compare can highlight differences at their original pixel positions.
 
 ```
-match % = matched / max(buildings in A, buildings in B) × 100
+match % = matched defenses / max(defenses in A, defenses in B) × 100
 ```
 
 Minimum match threshold to surface a result: **80%**
